@@ -1,15 +1,18 @@
 import pygame, random
+from decorator import append
 
 # Setup global constants
 FRAME_REFRESH_RATE = 30
-DISPLAY_WIDTH = 600
-DISPLAY_HEIGHT = 400
+DISPLAY_WIDTH = 1000
+DISPLAY_HEIGHT = 600
 BACKGROUND = (0, 0, 0)
 
 INITIAL_METEOR_Y_LOCATION = 10
 INITIAL_NUMBER_OF_METEORS = 8
 MAX_METEOR_SPEED = 5
 STARSHIP_SPEED = 10
+MAX_NUMBER_OF_CYCLES = 1000
+NEW_METEOR_CYCLE_INTERVAL = 40
 
 
 class GameObject:
@@ -105,11 +108,28 @@ class Game:
         # Set up meteors
         self.meteors = [Meteor(self) for _ in range(0, INITIAL_NUMBER_OF_METEORS)]
 
+    def check_for_collisions(self):
+        """ Checks to see if any of the meteors have collided with the starship"""
+        result = False
+        for meteor in self.meteors:
+            if self.starship.rect().colliderect(meteor.rect()):
+                result = True
+                break
+        return result
+
     def play(self):
         is_running = True
+        starship_collided = False
+        cycle_count = 0
 
         # Main game Playing Loop
-        while is_running:
+        while is_running and not starship_collided:
+
+            # See if the player has won
+            if cycle_count == MAX_NUMBER_OF_CYCLES:
+                print('WINNER!')
+                break
+
             # Work out what the user wants to do
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -130,6 +150,14 @@ class Game:
                         self.starship.move_down()
                     elif event.key == pygame.K_q:
                         is_running = False
+
+            # Check to see if a meteor has hit the ship
+            if self.check_for_collisions():
+                starship_collided = True
+
+            # Determine if new meteors should be added
+            if cycle_count % NEW_METEOR_CYCLE_INTERVAL == 0:
+                self.meteors.append(Meteor(self))
 
             # Move the Meteors
             for meteor in self.meteors:
